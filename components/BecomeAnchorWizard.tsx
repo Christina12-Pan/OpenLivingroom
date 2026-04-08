@@ -21,6 +21,7 @@ import {
   FALLBACK_LOCATION_CATALOG,
   type CountryRegionOption,
 } from "@/lib/data/locationCatalog";
+import { getCityCoordinates } from "@/lib/data/cityCoordinates";
 import { GEOGRAPHIC_ATTRIBUTION_DETAIL } from "@/lib/data/geographicAttribution";
 import {
   anchorFullSchema,
@@ -81,7 +82,7 @@ export function BecomeAnchorWizard() {
   } = useForm<AnchorFullFormValues>({
     resolver: zodResolver(anchorFullSchema),
     defaultValues: {
-      location_mode: "catalog",
+      location_mode: "manual",
       country_region: "",
       state_province: "",
       city: "",
@@ -339,6 +340,46 @@ export function BecomeAnchorWizard() {
       setSubmitError("Complete the location step.");
       return;
     }
+
+    if (!isManual) {
+      /**
+       * Catalog mode: geocode selected city/country to improve map precision.
+       * Fallback to static coordinates map if geocoding fails.
+       */
+      try {
+        const query = `${cityDisplay}, ${country}`;
+        const res = await fetch("/api/geocode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+        const data = (await res.json()) as {
+          ok?: boolean;
+          lat?: number;
+          lng?: number;
+        };
+        if (
+          res.ok &&
+          data.ok &&
+          Number.isFinite(data.lat) &&
+          Number.isFinite(data.lng)
+        ) {
+          latitude = data.lat as number;
+          longitude = data.lng as number;
+        }
+      } catch {
+        // Ignore network failures; fallback below.
+      }
+
+      if (latitude == null || longitude == null) {
+        const [lng, lat] = getCityCoordinates(citySlug, country);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          latitude = lat;
+          longitude = lng;
+        }
+      }
+    }
+
     if (
       isManual &&
       (latitude == null ||
@@ -527,6 +568,7 @@ export function BecomeAnchorWizard() {
             <h2 className="mb-4 font-serif text-2xl font-bold">
               Where are you staying?
             </h2>
+            <input type="hidden" value="manual" {...register("location_mode")} />
             <input
               type="hidden"
               {...register("geocode_lat", {
@@ -551,176 +593,61 @@ export function BecomeAnchorWizard() {
             <input type="hidden" {...register("manual_country_label")} />
             <input type="hidden" {...register("manual_display_name")} />
 
-            <fieldset className="space-y-3">
-              <legend className="text-sm font-bold uppercase tracking-wider text-secondary">
-                Location source
-              </legend>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#E2DDD4] bg-white px-4 py-3 has-[:checked]:border-[#B47B2E] has-[:checked]:bg-[#F0EDE6]">
-                  <input
-                    type="radio"
-                    value="catalog"
-                    {...register("location_mode")}
-                    className="accent-[#B47B2E]"
-                  />
-                  <span className="text-sm font-medium text-near-black">
-                    Choose from the list
-                  </span>
-                </label>
-                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#E2DDD4] bg-white px-4 py-3 has-[:checked]:border-[#B47B2E] has-[:checked]:bg-[#F0EDE6]">
-                  <input
-                    type="radio"
-                    value="manual"
-                    {...register("location_mode")}
-                    className="accent-[#B47B2E]"
-                  />
-                  <span className="text-sm font-medium text-near-black">
-                    My place isn&apos;t listed
-                  </span>
-                </label>
-              </div>
-            </fieldset>
-
-            {locationMode === "catalog" ? (
-              <>
-                {!locationCatalogReady ? (
-                  <p className="text-sm text-secondary">Loading locations…</p>
-                ) : null}
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold uppercase tracking-wider text-secondary">
-                      Country / region
-                    </label>
-                    <FormSelect
-                      {...register("country_region")}
-                      disabled={!locationCatalogReady}
-                    >
-                      <option value="">Select country / region</option>
-                      {countryRegionOptions.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </FormSelect>
-                    {errors.country_region && (
-                      <p className="text-sm text-[#D85A30]">
-                        {errors.country_region.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold uppercase tracking-wider text-secondary">
-                      State / province
-                    </label>
-                    <FormSelect
-                      {...register("state_province")}
-                      disabled={!locationCatalogReady || stateOptions.length === 0}
-                    >
-                      <option value="">Select state / province</option>
-                      {stateOptions.map((s) => (
-                        <option key={s.state_province} value={s.state_province}>
-                          {s.state_province}
-                        </option>
-                      ))}
-                    </FormSelect>
-                    {errors.state_province && (
-                      <p className="text-sm text-[#D85A30]">
-                        {errors.state_province.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold uppercase tracking-wider text-secondary">
-                    City
-                  </label>
-                  <FormSelect
-                    value={selectedCitySlug}
-                    disabled={!locationCatalogReady || cityOptions.length === 0}
-                    onChange={(event) => {
-                      const selected = cityOptions.find(
-                        (c) => c.city_slug === event.target.value
-                      );
-                      setValue("city_slug", selected?.city_slug ?? "", {
-                        shouldValidate: true,
-                      });
-                      setValue("city", selected?.city ?? "", {
-                        shouldValidate: true,
-                      });
-                    }}
-                  >
-                    <option value="">Select city</option>
-                    {cityOptions.map((city) => (
-                      <option key={city.city_slug} value={city.city_slug}>
-                        {city.city}
-                      </option>
-                    ))}
-                  </FormSelect>
-                  <input type="hidden" {...register("city")} />
-                  <input type="hidden" {...register("city_slug")} />
-                  {errors.city && (
-                    <p className="text-sm text-[#D85A30]">{errors.city.message}</p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="space-y-4 rounded-lg border border-[#E2DDD4] bg-white p-4">
-                <p className="text-sm text-secondary">
-                  Type a place name (city and country). We use OpenStreetMap search
-                  to place the map pin—add the country if results are ambiguous.
-                </p>
-                <div className="space-y-2">
-                  <label
-                    htmlFor="manual_query"
-                    className="text-sm font-bold uppercase tracking-wider text-secondary"
-                  >
-                    Search
-                  </label>
-                  <input
-                    id="manual_query"
-                    type="text"
-                    autoComplete="off"
-                    placeholder="e.g. Porto, Portugal"
-                    className="w-full rounded-lg border border-[#E2DDD4] bg-white px-3 py-3 text-sm text-near-black outline-none transition-colors focus:border-[#B47B2E] focus:ring-1 focus:ring-[#B47B2E]/30"
-                    {...register("manual_query")}
-                  />
-                  {errors.manual_query && (
-                    <p className="text-sm text-[#D85A30]">
-                      {errors.manual_query.message}
-                    </p>
-                  )}
-                  {geocodeError ? (
-                    <p className="text-sm text-[#D85A30]">{geocodeError}</p>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  disabled={geocodeLoading}
-                  onClick={() => void runManualGeocode()}
-                  className="rounded-md border border-[#B47B2E] bg-[#F0EDE6] px-4 py-2 text-sm font-semibold text-[#B47B2E] transition-opacity hover:opacity-90 disabled:opacity-50"
+            <div className="space-y-4 rounded-lg border border-[#E2DDD4] bg-white p-4">
+              <p className="text-sm text-secondary">
+                Type a place name (city and country). We use OpenStreetMap search
+                to place the map pin—add the country if results are ambiguous.
+              </p>
+              <div className="space-y-2">
+                <label
+                  htmlFor="manual_query"
+                  className="text-sm font-bold uppercase tracking-wider text-secondary"
                 >
-                  {geocodeLoading ? "Looking up…" : "Look up"}
-                </button>
-                {watch("manual_display_name") ? (
-                  <div className="rounded-md bg-[#F0EDE6]/80 p-3 text-sm text-near-black">
-                    <p className="font-medium">Resolved place</p>
-                    <p className="mt-1 text-secondary">{watch("manual_display_name")}</p>
-                    <p className="mt-2 font-mono text-xs text-secondary">
-                      {watch("geocode_lat") != null && watch("geocode_lng") != null
-                        ? `${Number(watch("geocode_lat")).toFixed(5)}, ${Number(watch("geocode_lng")).toFixed(5)}`
-                        : null}
-                    </p>
-                  </div>
+                  Search
+                </label>
+                <input
+                  id="manual_query"
+                  type="text"
+                  autoComplete="off"
+                  placeholder="e.g. Porto, Portugal"
+                  className="w-full rounded-lg border border-[#E2DDD4] bg-white px-3 py-3 text-sm text-near-black outline-none transition-colors focus:border-[#B47B2E] focus:ring-1 focus:ring-[#B47B2E]/30"
+                  {...register("manual_query")}
+                />
+                {errors.manual_query && (
+                  <p className="text-sm text-[#D85A30]">
+                    {errors.manual_query.message}
+                  </p>
+                )}
+                {geocodeError ? (
+                  <p className="text-sm text-[#D85A30]">{geocodeError}</p>
                 ) : null}
               </div>
-            )}
+              <button
+                type="button"
+                disabled={geocodeLoading}
+                onClick={() => void runManualGeocode()}
+                className="rounded-md border border-[#B47B2E] bg-[#F0EDE6] px-4 py-2 text-sm font-semibold text-[#B47B2E] transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {geocodeLoading ? "Looking up…" : "Look up"}
+              </button>
+              {watch("manual_display_name") ? (
+                <div className="rounded-md bg-[#F0EDE6]/80 p-3 text-sm text-near-black">
+                  <p className="font-medium">Resolved place</p>
+                  <p className="mt-1 text-secondary">{watch("manual_display_name")}</p>
+                  <p className="mt-2 font-mono text-xs text-secondary">
+                    {watch("geocode_lat") != null && watch("geocode_lng") != null
+                      ? `${Number(watch("geocode_lat")).toFixed(5)}, ${Number(watch("geocode_lng")).toFixed(5)}`
+                      : null}
+                  </p>
+                </div>
+              ) : null}
+            </div>
 
             <p className="text-[11px] leading-relaxed text-secondary">
               {GEOGRAPHIC_ATTRIBUTION_DETAIL}
             </p>
             <button
               type="button"
-              disabled={locationMode === "catalog" ? !locationCatalogReady : false}
               onClick={() => void nextFromStep2()}
               className="flex w-full items-center justify-center gap-2 rounded-md bg-[#B47B2E] py-4 font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
