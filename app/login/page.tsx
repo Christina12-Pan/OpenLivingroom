@@ -14,13 +14,8 @@ function LoginForm() {
   const supabase = useSupabaseBrowserClient();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/";
-  const callbackError = searchParams.get("error");
-  const callbackErrorCode = searchParams.get("error_code");
-  const callbackErrorDescription = searchParams.get("error_description");
-  const safeNext = next.startsWith("/") ? next : "/";
   const [loading, setLoading] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
-  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -29,6 +24,25 @@ function LoginForm() {
       setConfigError(null);
     }
   }, [supabase]);
+
+  async function signInWithGoogle() {
+    if (!supabase) {
+      setConfigError(SUPABASE_BROWSER_CONFIG_HINT);
+      return;
+    }
+    setLoading(true);
+    const origin = window.location.origin;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
+    });
+    if (error) {
+      setLoading(false);
+      console.error(error.message);
+    }
+  }
 
   return (
     <div className="mx-auto flex min-h-[50vh] max-w-md flex-col justify-center px-6 py-16">
@@ -41,36 +55,14 @@ function LoginForm() {
           {configError}
         </p>
       ) : null}
-      {callbackError ? (
-        <p className="mt-3 text-sm text-[#D85A30]" role="alert">
-          Sign-in callback failed
-          {callbackErrorCode ? ` (${callbackErrorCode})` : ""}.{" "}
-          {callbackErrorDescription ?? callbackError}
-        </p>
-      ) : null}
-      {authError ? (
-        <p className="mt-3 text-sm text-[#D85A30]" role="alert">
-          Could not start Google sign-in. {authError}
-        </p>
-      ) : null}
-      <form
-        action="/api/auth/google/start"
-        method="GET"
-        className="mt-8"
-        onSubmit={() => {
-          setLoading(true);
-          setAuthError(null);
-        }}
+      <button
+        type="button"
+        disabled={loading || !!configError}
+        onClick={() => void signInWithGoogle()}
+        className="mt-8 rounded-lg bg-[#B47B2E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#9A6825] disabled:opacity-60"
       >
-        <input type="hidden" name="next" value={safeNext} />
-        <button
-          type="submit"
-          disabled={loading || !!configError}
-          className="w-full rounded-lg bg-[#B47B2E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#9A6825] disabled:opacity-60"
-        >
-          {loading ? "Redirecting…" : "Continue with Google"}
-        </button>
-      </form>
+        {loading ? "Redirecting…" : "Continue with Google"}
+      </button>
     </div>
   );
 }
