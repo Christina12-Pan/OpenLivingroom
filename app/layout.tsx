@@ -22,8 +22,15 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Open Livingroom | GSB MBA Summer Housing",
-  description: "Coordinate summer housing with your GSB classmates.",
+  title: "Open Livingroom",
+  description:
+    "Your classmates' living rooms, the whole world. Find a stay with Stanford GSB classmates or open your livingroom as an Anchor.",
+  openGraph: {
+    title: "Open Livingroom",
+    description:
+      "Your classmates' living rooms, the whole world. Find a stay with Stanford GSB classmates or open your livingroom as an Anchor.",
+    type: "website",
+  },
 };
 
 /**
