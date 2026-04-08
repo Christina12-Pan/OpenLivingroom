@@ -1,4 +1,5 @@
 import Map from "@/components/Map";
+import { HomeCityFilters } from "@/components/HomeCityFilters";
 import { loadHomePageData } from "@/lib/queries/home";
 import { Users, MapPin, Globe } from "lucide-react";
 import Link from "next/link";
@@ -78,37 +79,7 @@ export default async function Home() {
           <Map markers={markers} />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {cityCards.length === 0 && !error ? (
-            <p className="col-span-full rounded-xl border border-[#E2DDD4] bg-[#FAF8F4] p-6 text-center text-secondary">
-              No Anchors yet. Be the first.
-            </p>
-          ) : null}
-          {cityCards.map((c) => (
-            <Link
-              key={c.slug}
-              href={`/city/${c.slug}`}
-              className="rounded-xl border border-[#E2DDD4] bg-[#FAF8F4] p-4 transition-colors hover:border-[#B47B2E]"
-            >
-              <p className="font-serif text-lg font-semibold text-near-black">{c.city}</p>
-              <p className="text-sm text-secondary">{c.country}</p>
-              <div className="mt-2 flex items-center gap-2">
-                <span
-                  className={
-                    c.status === "available"
-                      ? "rounded-full bg-[#2A9D6F]/15 px-2 py-0.5 text-[11px] font-semibold text-[#2A9D6F]"
-                      : c.status === "pending"
-                        ? "rounded-full bg-[#E8C97A]/15 px-2 py-0.5 text-[11px] font-semibold text-[#6B4800]"
-                        : "rounded-full bg-[#D85A30]/15 px-2 py-0.5 text-[11px] font-semibold text-[#D85A30]"
-                  }
-                >
-                  {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
-                </span>
-                <span className="text-xs text-secondary">{c.anchorCount} listing{c.anchorCount === 1 ? "" : "s"}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <HomeCityFilters cityCards={cityCards} hasLoadError={Boolean(error)} />
       </section>
 
       <section className="flex flex-col items-center gap-8 rounded-xl border border-[#E2DDD4] bg-[#F0EDE6] p-8 md:flex-row md:justify-around">
