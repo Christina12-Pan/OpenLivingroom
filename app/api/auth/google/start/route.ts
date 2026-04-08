@@ -24,6 +24,6 @@ export async function GET(request: Request) {
   authorizeUrl.searchParams.set("provider", "google");
   authorizeUrl.searchParams.set("redirect_to", redirectTo);
 
-  return NextResponse.redirect(authorizeUrl.toString());
+  return NextResponse.redirect(authorizeUrl.toString(), 302);
 }
 
