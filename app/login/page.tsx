@@ -4,6 +4,7 @@ import {
   useSupabaseBrowserClient,
   SUPABASE_BROWSER_CONFIG_HINT,
 } from "@/lib/supabase/client";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
@@ -17,6 +18,8 @@ function LoginForm() {
   const callbackError = searchParams.get("error");
   const callbackErrorCode = searchParams.get("error_code");
   const callbackErrorDescription = searchParams.get("error_description");
+  const safeNext = next.startsWith("/") ? next : "/";
+  const startHref = `/api/auth/google/start?next=${encodeURIComponent(safeNext)}`;
   const [loading, setLoading] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -28,19 +31,6 @@ function LoginForm() {
       setConfigError(null);
     }
   }, [supabase]);
-
-  async function signInWithGoogle() {
-    if (!supabase) {
-      setConfigError(SUPABASE_BROWSER_CONFIG_HINT);
-      return;
-    }
-    setLoading(true);
-    setAuthError(null);
-    const safeNext = next.startsWith("/") ? next : "/";
-    window.location.assign(
-      `/api/auth/google/start?next=${encodeURIComponent(safeNext)}`
-    );
-  }
 
   return (
     <div className="mx-auto flex min-h-[50vh] max-w-md flex-col justify-center px-6 py-16">
@@ -65,14 +55,26 @@ function LoginForm() {
           Could not start Google sign-in. {authError}
         </p>
       ) : null}
-      <button
-        type="button"
-        disabled={loading || !!configError}
-        onClick={() => void signInWithGoogle()}
-        className="mt-8 rounded-lg bg-[#B47B2E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#9A6825] disabled:opacity-60"
-      >
-        {loading ? "Redirecting…" : "Continue with Google"}
-      </button>
+      {configError ? (
+        <button
+          type="button"
+          disabled
+          className="mt-8 rounded-lg bg-[#B47B2E] px-5 py-2.5 text-sm font-medium text-white opacity-60"
+        >
+          Continue with Google
+        </button>
+      ) : (
+        <Link
+          href={startHref}
+          onClick={() => {
+            setLoading(true);
+            setAuthError(null);
+          }}
+          className="mt-8 inline-flex items-center justify-center rounded-lg bg-[#B47B2E] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#9A6825]"
+        >
+          {loading ? "Redirecting…" : "Continue with Google"}
+        </Link>
+      )}
     </div>
   );
 }
