@@ -14,8 +14,12 @@ function LoginForm() {
   const supabase = useSupabaseBrowserClient();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/";
+  const callbackError = searchParams.get("error");
+  const callbackErrorCode = searchParams.get("error_code");
+  const callbackErrorDescription = searchParams.get("error_description");
   const [loading, setLoading] = useState(false);
   const [configError, setConfigError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -30,18 +34,30 @@ function LoginForm() {
       setConfigError(SUPABASE_BROWSER_CONFIG_HINT);
       return;
     }
+    setAuthError(null);
     setLoading(true);
     const origin = window.location.origin;
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        skipBrowserRedirect: true,
       },
     });
     if (error) {
       setLoading(false);
-      console.error(error.message);
+      setAuthError(error.message);
+      console.error("[auth][google] signInWithOAuth failed", error.message);
+      return;
     }
+
+    if (!data?.url) {
+      setLoading(false);
+      setAuthError("Google OAuth URL was not returned.");
+      return;
+    }
+
+    window.location.assign(data.url);
   }
 
   return (
@@ -53,6 +69,18 @@ function LoginForm() {
       {configError ? (
         <p className="mt-6 text-sm text-[#D85A30]" role="alert">
           {configError}
+        </p>
+      ) : null}
+      {callbackError ? (
+        <p className="mt-3 text-sm text-[#D85A30]" role="alert">
+          Sign-in callback failed
+          {callbackErrorCode ? ` (${callbackErrorCode})` : ""}.{" "}
+          {callbackErrorDescription ?? callbackError}
+        </p>
+      ) : null}
+      {authError ? (
+        <p className="mt-3 text-sm text-[#D85A30]" role="alert">
+          Could not start Google sign-in. {authError}
         </p>
       ) : null}
       <button
