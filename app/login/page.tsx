@@ -34,54 +34,12 @@ function LoginForm() {
       setConfigError(SUPABASE_BROWSER_CONFIG_HINT);
       return;
     }
-    setAuthError(null);
     setLoading(true);
-    const origin = window.location.origin;
-    const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
-    const oauthTask = supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-        skipBrowserRedirect: true,
-      },
-    });
-    const timeoutTask = new Promise<"timeout">((resolve) => {
-      window.setTimeout(() => resolve("timeout"), 2500);
-    });
-    const raced = await Promise.race([oauthTask, timeoutTask]);
-
-    if (raced === "timeout") {
-      const publicUrl =
-        process.env.NEXT_PUBLIC_SUPABASE_URL ||
-        process.env["SUPABASE_URL"] ||
-        "";
-      if (!publicUrl) {
-        setLoading(false);
-        setAuthError("Supabase URL is missing in this environment.");
-        return;
-      }
-      const fallbackUrl =
-        `${publicUrl.replace(/\/+$/, "")}/auth/v1/authorize` +
-        `?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
-      window.location.assign(fallbackUrl);
-      return;
-    }
-
-    const { data, error } = raced;
-    if (error) {
-      setLoading(false);
-      setAuthError(error.message);
-      console.error("[auth][google] signInWithOAuth failed", error.message);
-      return;
-    }
-
-    if (!data?.url) {
-      setLoading(false);
-      setAuthError("Google OAuth URL was not returned.");
-      return;
-    }
-
-    window.location.assign(data.url);
+    setAuthError(null);
+    const safeNext = next.startsWith("/") ? next : "/";
+    window.location.assign(
+      `/api/auth/google/start?next=${encodeURIComponent(safeNext)}`
+    );
   }
 
   return (
