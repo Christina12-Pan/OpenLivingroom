@@ -1,0 +1,423 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+  .ol-wrap { font-family: 'DM Sans', sans-serif; max-width: 900px; margin: 0 auto; }
+  .ol-nav { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 0.5px solid var(--color-border-tertiary); padding-bottom: 0; }
+  .ol-tab { padding: 8px 16px; font-size: 13px; cursor: pointer; border: none; background: none; color: var(--color-text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .ol-tab.active { color: var(--color-text-primary); border-bottom-color: #B47B2E; font-weight: 500; }
+  .ol-tab:hover { color: var(--color-text-primary); }
+  .ol-screen { display: none; }
+  .ol-screen.active { display: block; }
+
+  .hero-badge { display: inline-block; background: #FFF3DC; color: #8A5A0C; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 20px; margin-bottom: 16px; border: 0.5px solid #E8C97A; }
+  .hero-title { font-family: 'Playfair Display', serif; font-size: 42px; font-weight: 400; line-height: 1.15; margin: 0 0 12px; color: var(--color-text-primary); }
+  .hero-title span { font-style: italic; }
+  .hero-sub { font-size: 15px; color: var(--color-text-secondary); line-height: 1.6; max-width: 480px; margin-bottom: 28px; }
+  .hero-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-primary { background: #B47B2E; color: white; border: none; padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-secondary { background: none; color: var(--color-text-primary); border: 0.5px solid var(--color-border-secondary); padding: 10px 22px; border-radius: 8px; font-size: 14px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-primary:hover { background: #9A6825; }
+  .btn-secondary:hover { background: var(--color-background-secondary); }
+
+  .hero-stats { display: flex; gap: 32px; margin-top: 40px; padding-top: 28px; border-top: 0.5px solid var(--color-border-tertiary); }
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 400; color: var(--color-text-primary); }
+  .stat-label { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+
+  .hero-right { position: relative; }
+  .world-svg { width: 100%; height: auto; }
+
+  .map-wrap { background: var(--color-background-secondary); border-radius: 12px; padding: 20px; border: 0.5px solid var(--color-border-tertiary); }
+  .map-legend { display: flex; gap: 16px; margin-bottom: 14px; align-items: center; font-size: 12px; color: var(--color-text-secondary); }
+  .dot-avail { width: 8px; height: 8px; border-radius: 50%; background: #2A9D6F; display: inline-block; margin-right: 5px; }
+  .dot-pend { width: 8px; height: 8px; border-radius: 50%; background: #E8C97A; display: inline-block; margin-right: 5px; }
+  .dot-full { width: 8px; height: 8px; border-radius: 50%; background: #D85A30; display: inline-block; margin-right: 5px; }
+
+  .city-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 20px; }
+  .city-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 10px; padding: 14px; cursor: pointer; transition: border-color 0.15s; }
+  .city-card:hover { border-color: var(--color-border-secondary); }
+  .city-name { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+  .city-meta { font-size: 12px; color: var(--color-text-secondary); }
+  .avail-pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-top: 8px; }
+  .avail-green { background: #EAF5EE; color: #1A6B3A; }
+  .avail-amber { background: #FFF3DC; color: #8A5A0C; }
+  .avail-red { background: #FCEAEA; color: #8A1A1A; }
+
+  .anchor-cards { display: flex; flex-direction: column; gap: 12px; }
+  .anchor-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 10px; padding: 16px; display: flex; gap: 14px; align-items: flex-start; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; flex-shrink: 0; }
+  .anchor-name { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+  .anchor-detail { font-size: 12px; color: var(--color-text-secondary); margin-top: 3px; line-height: 1.5; }
+  .cal-strip { display: flex; gap: 4px; margin-top: 10px; flex-wrap: wrap; }
+  .cal-day { width: 22px; height: 22px; border-radius: 4px; font-size: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 500; }
+  .cal-avail { background: #2A9D6F; }
+  .cal-pend { background: #E8C97A; color: #6B4800; }
+  .cal-full { background: #D85A30; }
+  .request-btn { margin-top: 12px; background: none; border: 0.5px solid #B47B2E; color: #B47B2E; padding: 7px 16px; border-radius: 7px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .request-btn:hover { background: #FFF8ED; }
+
+  .form-wrap { max-width: 520px; }
+  .form-section { margin-bottom: 24px; }
+  .form-label { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 6px; display: block; }
+  .form-hint { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  input, select, textarea { border-radius: 8px; font-family: 'DM Sans', sans-serif; }
+  textarea { width: 100%; min-height: 72px; padding: 10px; font-size: 14px; resize: vertical; }
+  .radio-group { display: flex; gap: 10px; }
+  .radio-card { border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 10px 16px; cursor: pointer; font-size: 13px; color: var(--color-text-secondary); transition: all 0.15s; }
+  .radio-card.selected { border-color: #B47B2E; background: #FFF8ED; color: #8A5A0C; font-weight: 500; }
+  .step-indicator { display: flex; gap: 8px; align-items: center; margin-bottom: 28px; }
+  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-border-secondary); }
+  .step-dot.done { background: #2A9D6F; }
+  .step-dot.active { background: #B47B2E; width: 24px; border-radius: 4px; }
+  .step-label { font-size: 12px; color: var(--color-text-secondary); margin-left: 8px; }
+
+  .roamer-hero { background: var(--color-background-secondary); border-radius: 12px; padding: 20px 24px; border: 0.5px solid var(--color-border-tertiary); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .filter-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-chip { border: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); padding: 6px 14px; border-radius: 20px; font-size: 12px; color: var(--color-text-secondary); cursor: pointer; }
+  .filter-chip.on { background: #FFF8ED; border-color: #B47B2E; color: #8A5A0C; font-weight: 500; }
+
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; padding-bottom: 14px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .logo { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--color-text-primary); }
+  .logo span { color: #B47B2E; }
+  .header-nav { display: flex; gap: 6px; }
+  .hnav-btn { background: none; border: 0.5px solid var(--color-border-tertiary); padding: 6px 14px; border-radius: 7px; font-size: 12px; cursor: pointer; color: var(--color-text-secondary); font-family: 'DM Sans', sans-serif; }
+  .hnav-btn.cta { background: #B47B2E; color: white; border-color: #B47B2E; }
+</style>
+
+<div class="ol-wrap">
+  <div class="header">
+    <div class="logo">Open <span>Livingroom</span></div>
+    <div class="header-nav">
+      <button class="hnav-btn">Log in</button>
+      <button class="hnav-btn cta">I'm an Anchor</button>
+    </div>
+  </div>
+
+  <div class="ol-nav">
+    <button class="ol-tab active" onclick="showScreen('home')">Home</button>
+    <button class="ol-tab" onclick="showScreen('map')">Explore map</button>
+    <button class="ol-tab" onclick="showScreen('city')">City view</button>
+    <button class="ol-tab" onclick="showScreen('anchor')">Become an Anchor</button>
+    <button class="ol-tab" onclick="showScreen('roamer')">I'm a Roamer</button>
+  </div>
+
+  <div id="screen-home" class="ol-screen active">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;min-height:320px;">
+      <div>
+        <div class="hero-badge">GSB Summer 2025</div>
+        <h1 class="hero-title">Your classmates'<br><span>living rooms,</span><br>the whole world.</h1>
+        <p class="hero-sub">Remote this summer? Stay with a GSB classmate in their city — for free. No hotels, no strangers. Just couches, connections, and the community you already trust.</p>
+        <div class="hero-btns">
+          <button class="btn-primary" onclick="showScreen('roamer')">Find a place to stay</button>
+          <button class="btn-secondary" onclick="showScreen('anchor')">Open my livingroom</button>
+        </div>
+        <div class="hero-stats">
+          <div><div class="stat-num">34</div><div class="stat-label">Anchors this summer</div></div>
+          <div><div class="stat-num">19</div><div class="stat-label">Cities worldwide</div></div>
+          <div><div class="stat-num">Class of '26</div><div class="stat-label">Only GSBers</div></div>
+        </div>
+      </div>
+      <div>
+        <svg viewBox="0 0 380 280" class="world-svg" xmlns="http://www.w3.org/2000/svg">
+          <rect width="380" height="280" rx="12" fill="#F5F0E8"/>
+          <text x="190" y="100" text-anchor="middle" font-family="Playfair Display,serif" font-size="13" fill="#C4B899" opacity="0.6">· · · · · · · · · · ·</text>
+          <text x="190" y="120" text-anchor="middle" font-family="Playfair Display,serif" font-size="11" fill="#B0A080" opacity="0.5">world map placeholder</text>
+          <text x="190" y="140" text-anchor="middle" font-family="Playfair Display,serif" font-size="11" fill="#B0A080" opacity="0.5">Mapbox / react-simple-maps</text>
+          <text x="190" y="160" text-anchor="middle" font-family="Playfair Display,serif" font-size="13" fill="#C4B899" opacity="0.6">· · · · · · · · · · ·</text>
+          <circle cx="80" cy="130" r="14" fill="#2A9D6F" opacity="0.9"/>
+          <text x="80" y="134" text-anchor="middle" font-size="11" fill="white" font-weight="500" font-family="DM Sans,sans-serif">3</text>
+          <text x="80" y="152" text-anchor="middle" font-size="9" fill="#6B5A3A" font-family="DM Sans,sans-serif">NYC</text>
+          <circle cx="148" cy="108" r="10" fill="#2A9D6F" opacity="0.9"/>
+          <text x="148" y="112" text-anchor="middle" font-size="10" fill="white" font-weight="500" font-family="DM Sans,sans-serif">2</text>
+          <text x="148" y="126" text-anchor="middle" font-size="9" fill="#6B5A3A" font-family="DM Sans,sans-serif">London</text>
+          <circle cx="195" cy="118" r="10" fill="#E8C97A" opacity="0.9"/>
+          <text x="195" y="122" text-anchor="middle" font-size="10" fill="#6B4800" font-weight="500" font-family="DM Sans,sans-serif">1</text>
+          <text x="195" y="136" text-anchor="middle" font-size="9" fill="#6B5A3A" font-family="DM Sans,sans-serif">Berlin</text>
+          <circle cx="255" cy="125" r="12" fill="#2A9D6F" opacity="0.9"/>
+          <text x="255" y="129" text-anchor="middle" font-size="10" fill="white" font-weight="500" font-family="DM Sans,sans-serif">2</text>
+          <text x="255" y="143" text-anchor="middle" font-size="9" fill="#6B5A3A" font-family="DM Sans,sans-serif">Singapore</text>
+          <circle cx="310" cy="170" r="10" fill="#D85A30" opacity="0.9"/>
+          <text x="310" y="174" text-anchor="middle" font-size="10" fill="white" font-weight="500" font-family="DM Sans,sans-serif">1</text>
+          <text x="310" y="188" text-anchor="middle" font-size="9" fill="#6B5A3A" font-family="DM Sans,sans-serif">Sydney</text>
+          <circle cx="110" cy="175" r="11" fill="#2A9D6F" opacity="0.9"/>
+          <text x="110" y="179" text-anchor="middle" font-size="10" fill="white" font-weight="500" font-family="DM Sans,sans-serif">2</text>
+          <text x="110" y="193" text-anchor="middle" font-size="9" fill="#6B5A3A" font-family="DM Sans,sans-serif">São Paulo</text>
+          <rect x="14" y="240" width="8" height="8" rx="4" fill="#2A9D6F"/>
+          <text x="26" y="248" font-size="9" fill="#6B5A3A" font-family="DM Sans,sans-serif">Available</text>
+          <rect x="76" y="240" width="8" height="8" rx="4" fill="#E8C97A"/>
+          <text x="88" y="248" font-size="9" fill="#6B5A3A" font-family="DM Sans,sans-serif">Pending</text>
+          <rect x="132" y="240" width="8" height="8" rx="4" fill="#D85A30"/>
+          <text x="144" y="248" font-size="9" fill="#6B5A3A" font-family="DM Sans,sans-serif">Fully booked</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-map" class="ol-screen">
+    <div class="map-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:500;color:var(--color-text-primary);">Summer 2025 — 19 cities, 34 Anchors</div>
+        <div class="map-legend">
+          <span><span class="dot-avail"></span>Available</span>
+          <span><span class="dot-pend"></span>Pending</span>
+          <span><span class="dot-full"></span>Booked</span>
+        </div>
+      </div>
+      <svg viewBox="0 0 860 360" style="width:100%;height:auto;border-radius:8px;" xmlns="http://www.w3.org/2000/svg">
+        <rect width="860" height="360" fill="#EDE8DF"/>
+        <text x="430" y="175" text-anchor="middle" font-family="Playfair Display,serif" font-size="14" fill="#C4B899">[ interactive world map — Mapbox integration ]</text>
+        <g>
+          <circle cx="185" cy="155" r="18" fill="#2A9D6F" opacity="0.92" style="cursor:pointer"/>
+          <text x="185" y="160" text-anchor="middle" font-size="12" fill="white" font-weight="500" font-family="DM Sans,sans-serif">3</text>
+          <text x="185" y="178" text-anchor="middle" font-size="10" fill="#4A3A1A" font-family="DM Sans,sans-serif">New York</text>
+        </g>
+        <g>
+          <circle cx="330" cy="128" r="15" fill="#2A9D6F" opacity="0.92" style="cursor:pointer"/>
+          <text x="330" y="133" text-anchor="middle" font-size="11" fill="white" font-weight="500" font-family="DM Sans,sans-serif">2</text>
+          <text x="330" y="150" text-anchor="middle" font-size="10" fill="#4A3A1A" font-family="DM Sans,sans-serif">London</text>
+        </g>
+        <g>
+          <circle cx="390" cy="132" r="13" fill="#E8C97A" opacity="0.95" style="cursor:pointer"/>
+          <text x="390" y="137" text-anchor="middle" font-size="11" fill="#5A3A00" font-weight="500" font-family="DM Sans,sans-serif">1</text>
+          <text x="390" y="153" text-anchor="middle" font-size="10" fill="#4A3A1A" font-family="DM Sans,sans-serif">Berlin</text>
+        </g>
+        <g>
+          <circle cx="430" cy="138" r="13" fill="#2A9D6F" opacity="0.92" style="cursor:pointer"/>
+          <text x="430" y="143" text-anchor="middle" font-size="11" fill="white" font-weight="500" font-family="DM Sans,sans-serif">2</text>
+          <text x="430" y="158" text-anchor="middle" font-size="10" fill="#4A3A1A" font-family="DM Sans,sans-serif">Dubai</text>
+        </g>
+        <g>
+          <circle cx="590" cy="175" r="14" fill="#2A9D6F" opacity="0.92" style="cursor:pointer"/>
+          <text x="590" y="180" text-anchor="middle" font-size="11" fill="white" font-weight="500" font-family="DM Sans,sans-serif">2</text>
+          <text x="590" y="196" text-anchor="middle" font-size="10" fill="#4A3A1A" font-family="DM Sans,sans-serif">Singapore</text>
+        </g>
+        <g>
+          <circle cx="660" cy="195" r="13" fill="#D85A30" opacity="0.92" style="cursor:pointer"/>
+          <text x="660" y="200" text-anchor="middle" font-size="11" fill="white" font-weight="500" font-family="DM Sans,sans-serif">1</text>
+          <text x="660" y="215" text-anchor="middle" font-size="10" fill="#4A3A1A" font-family="DM Sans,sans-serif">Tokyo</text>
+        </g>
+        <g>
+          <circle cx="245" cy="240" r="13" fill="#2A9D6F" opacity="0.92" style="cursor:pointer"/>
+          <text x="245" y="245" text-anchor="middle" font-size="11" fill="white" font-weight="500" font-family="DM Sans,sans-serif">2</text>
+          <text x="245" y="260" text-anchor="middle" font-size="10" fill="#4A3A1A" font-family="DM Sans,sans-serif">São Paulo</text>
+        </g>
+        <g>
+          <circle cx="710" cy="280" r="13" fill="#2A9D6F" opacity="0.92" style="cursor:pointer"/>
+          <text x="710" y="285" text-anchor="middle" font-size="11" fill="white" font-weight="500" font-family="DM Sans,sans-serif">2</text>
+          <text x="710" y="300" text-anchor="middle" font-size="10" fill="#4A3A1A" font-family="DM Sans,sans-serif">Sydney</text>
+        </g>
+      </svg>
+    </div>
+    <div class="city-grid">
+      <div class="city-card" onclick="showScreen('city')"><div class="city-name">New York</div><div class="city-meta">3 Anchors · Jun 1 – Aug 31</div><span class="avail-pill avail-green">2 available now</span></div>
+      <div class="city-card"><div class="city-name">London</div><div class="city-meta">2 Anchors · Jun 15 – Aug 15</div><span class="avail-pill avail-amber">1 pending</span></div>
+      <div class="city-card"><div class="city-name">Singapore</div><div class="city-meta">2 Anchors · Jul 1 – Aug 30</div><span class="avail-pill avail-green">2 available</span></div>
+      <div class="city-card"><div class="city-name">Berlin</div><div class="city-meta">1 Anchor · Jun 1 – Jul 31</div><span class="avail-pill avail-amber">1 pending</span></div>
+      <div class="city-card"><div class="city-name">Tokyo</div><div class="city-meta">1 Anchor · Jul 15 – Aug 31</div><span class="avail-pill avail-red">Fully booked</span></div>
+      <div class="city-card"><div class="city-name">São Paulo</div><div class="city-meta">2 Anchors · Jun 10 – Aug 20</div><span class="avail-pill avail-green">2 available</span></div>
+      <div class="city-card"><div class="city-name">Dubai</div><div class="city-meta">2 Anchors · Jun 1 – Aug 31</div><span class="avail-pill avail-green">1 available</span></div>
+      <div class="city-card"><div class="city-name">Sydney</div><div class="city-meta">2 Anchors · Jun 1 – Sep 1</div><span class="avail-pill avail-green">2 available</span></div>
+    </div>
+  </div>
+
+  <div id="screen-city" class="ol-screen">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <button class="btn-secondary" style="padding:6px 12px;font-size:12px;" onclick="showScreen('map')">← Back to map</button>
+      <div style="font-size:13px;color:var(--color-text-secondary);">New York City</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px;">
+      <h2 style="font-family:'Playfair Display',serif;font-size:26px;font-weight:400;margin:0;color:var(--color-text-primary);">New York <span style="font-style:italic;color:#B47B2E;">City</span></h2>
+      <div style="font-size:13px;color:var(--color-text-secondary);">3 Anchors · Jun 1 – Aug 31</div>
+    </div>
+    <div class="anchor-cards">
+      <div class="anchor-card">
+        <div class="avatar" style="background:#E1F5EE;color:#0F6E56;">MK</div>
+        <div style="flex:1;">
+          <div class="anchor-name">Min-ji Kim</div>
+          <div class="anchor-detail">Interning @ Goldman Sachs · Upper West Side · 1 guest max<br>Has a cat · 3-day advance notice preferred</div>
+          <div class="cal-strip">
+            <div style="font-size:10px;color:var(--color-text-secondary);line-height:22px;margin-right:4px;">Jun</div>
+            <div class="cal-day cal-avail">1</div><div class="cal-day cal-avail">2</div><div class="cal-day cal-avail">3</div><div class="cal-day cal-full">4</div><div class="cal-day cal-full">5</div><div class="cal-day cal-full">6</div><div class="cal-day cal-full">7</div><div class="cal-day cal-avail">8</div><div class="cal-day cal-avail">9</div><div class="cal-day cal-pend">10</div><div class="cal-day cal-pend">11</div><div class="cal-day cal-pend">12</div><div class="cal-day cal-avail">13</div><div class="cal-day cal-avail">14</div>
+          </div>
+          <button class="request-btn">Request to stay</button>
+        </div>
+      </div>
+      <div class="anchor-card">
+        <div class="avatar" style="background:#FAECE7;color:#993C1D;">DP</div>
+        <div style="flex:1;">
+          <div class="anchor-name">Diego Pereira</div>
+          <div class="anchor-detail">Interning @ McKinsey · Brooklyn · 2 guests max<br>No pets · Flexible on timing</div>
+          <div class="cal-strip">
+            <div style="font-size:10px;color:var(--color-text-secondary);line-height:22px;margin-right:4px;">Jun</div>
+            <div class="cal-day cal-avail">1</div><div class="cal-day cal-avail">2</div><div class="cal-day cal-avail">3</div><div class="cal-day cal-avail">4</div><div class="cal-day cal-avail">5</div><div class="cal-day cal-avail">6</div><div class="cal-day cal-avail">7</div><div class="cal-day cal-avail">8</div><div class="cal-day cal-avail">9</div><div class="cal-day cal-avail">10</div><div class="cal-day cal-avail">11</div><div class="cal-day cal-avail">12</div><div class="cal-day cal-avail">13</div><div class="cal-day cal-avail">14</div>
+          </div>
+          <button class="request-btn">Request to stay</button>
+        </div>
+      </div>
+      <div class="anchor-card" style="opacity:0.6;">
+        <div class="avatar" style="background:#E6F1FB;color:#185FA5;">SL</div>
+        <div style="flex:1;">
+          <div class="anchor-name">Sophie Laurent</div>
+          <div class="anchor-detail">Interning @ Sequoia · Midtown · 1 guest max<br>Fully booked June – August</div>
+          <div class="cal-strip">
+            <div style="font-size:10px;color:var(--color-text-secondary);line-height:22px;margin-right:4px;">Jun</div>
+            <div class="cal-day cal-full">1</div><div class="cal-day cal-full">2</div><div class="cal-day cal-full">3</div><div class="cal-day cal-full">4</div><div class="cal-day cal-full">5</div><div class="cal-day cal-full">6</div><div class="cal-day cal-full">7</div><div class="cal-day cal-full">8</div><div class="cal-day cal-full">9</div><div class="cal-day cal-full">10</div><div class="cal-day cal-full">11</div><div class="cal-day cal-full">12</div><div class="cal-day cal-full">13</div><div class="cal-day cal-full">14</div>
+          </div>
+          <button class="request-btn" disabled style="opacity:0.5;cursor:not-allowed;">Fully booked</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-anchor" class="ol-screen">
+    <div class="form-wrap">
+      <div style="margin-bottom:20px;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:26px;font-weight:400;margin:0 0 6px;color:var(--color-text-primary);">Become an <span style="font-style:italic;color:#B47B2E;">Anchor</span></h2>
+        <p style="font-size:14px;color:var(--color-text-secondary);margin:0;">Open your livingroom to classmates. Takes 2 minutes.</p>
+      </div>
+      <div class="step-indicator">
+        <div class="step-dot done"></div>
+        <div class="step-dot active"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+        <span class="step-label">Step 2 of 4 — Your location</span>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Where will you be this summer?</label>
+        <div class="form-row">
+          <input type="text" placeholder="City" value="New York"/>
+          <select><option>United States</option><option>United Kingdom</option><option>Singapore</option><option>Germany</option></select>
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Your internship / role</label>
+        <input type="text" placeholder="e.g. Goldman Sachs, Finance" style="width:100%;" value="Goldman Sachs · Investment Banking"/>
+        <div class="form-hint">Shown on your Anchor card so Roamers know what you're up to</div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Available dates</label>
+        <div class="form-row">
+          <input type="date" value="2025-06-01"/>
+          <input type="date" value="2025-08-31"/>
+        </div>
+        <div class="form-hint">You can add multiple date ranges after signup</div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Guests you can host</label>
+        <div class="radio-group">
+          <div class="radio-card selected">1 person</div>
+          <div class="radio-card">2 people</div>
+          <div class="radio-card">Flexible</div>
+        </div>
+      </div>
+      <div class="form-section">
+        <label class="form-label">Anything Roamers should know?</label>
+        <textarea placeholder="e.g. I have a dog, need 3-day notice, no smoking...">I have a friendly lab. Please give me 3 days' notice. Happy to show you around the neighborhood!</textarea>
+      </div>
+      <button class="btn-primary" style="width:100%;">Continue →</button>
+    </div>
+  </div>
+
+  <div id="screen-roamer" class="ol-screen">
+    <div class="roamer-hero">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;color:var(--color-text-primary);">Where do you want to <span style="font-style:italic;color:#B47B2E;">roam</span>?</div>
+        <div style="font-size:13px;color:var(--color-text-secondary);margin-top:4px;">34 Anchors across 19 cities — all GSB classmates</div>
+      </div>
+      <button class="btn-primary">+ Add my wishlist</button>
+    </div>
+    <div class="filter-row">
+      <div class="filter-chip on">All cities</div>
+      <div class="filter-chip">Americas</div>
+      <div class="filter-chip">Europe</div>
+      <div class="filter-chip">Asia Pacific</div>
+      <div class="filter-chip on">Available in July</div>
+      <div class="filter-chip">1+ guests</div>
+      <div class="filter-chip">No pets</div>
+    </div>
+    <div class="city-grid">
+      <div class="city-card" onclick="showScreen('city')">
+        <div style="display:flex;gap:-4px;margin-bottom:8px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#E1F5EE;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#0F6E56;">MK</div>
+          <div style="width:24px;height:24px;border-radius:50%;background:#FAECE7;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#993C1D;margin-left:-6px;">DP</div>
+          <div style="width:24px;height:24px;border-radius:50%;background:#E6F1FB;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#185FA5;margin-left:-6px;">SL</div>
+        </div>
+        <div class="city-name">New York</div>
+        <div class="city-meta">3 Anchors · Jun – Aug</div>
+        <span class="avail-pill avail-green">2 available</span>
+      </div>
+      <div class="city-card">
+        <div style="display:flex;margin-bottom:8px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#FFF3DC;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#8A5A0C;">AL</div>
+          <div style="width:24px;height:24px;border-radius:50%;background:#FBEAF0;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#993556;margin-left:-6px;">RN</div>
+        </div>
+        <div class="city-name">London</div>
+        <div class="city-meta">2 Anchors · Jun – Aug</div>
+        <span class="avail-pill avail-amber">1 pending</span>
+      </div>
+      <div class="city-card">
+        <div style="display:flex;margin-bottom:8px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#EAF3DE;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#3B6D11;">YT</div>
+          <div style="width:24px;height:24px;border-radius:50%;background:#E1F5EE;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#0F6E56;margin-left:-6px;">BJ</div>
+        </div>
+        <div class="city-name">Singapore</div>
+        <div class="city-meta">2 Anchors · Jul – Aug</div>
+        <span class="avail-pill avail-green">2 available</span>
+      </div>
+      <div class="city-card">
+        <div style="display:flex;margin-bottom:8px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#FAECE7;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#993C1D;">CP</div>
+          <div style="width:24px;height:24px;border-radius:50%;background:#E6F1FB;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#185FA5;margin-left:-6px;">WK</div>
+        </div>
+        <div class="city-name">São Paulo</div>
+        <div class="city-meta">2 Anchors · Jun – Aug</div>
+        <span class="avail-pill avail-green">2 available</span>
+      </div>
+      <div class="city-card">
+        <div style="display:flex;margin-bottom:8px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#EEEDFE;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#534AB7;">HM</div>
+        </div>
+        <div class="city-name">Berlin</div>
+        <div class="city-meta">1 Anchor · Jun – Jul</div>
+        <span class="avail-pill avail-amber">1 pending</span>
+      </div>
+      <div class="city-card" style="opacity:0.55;">
+        <div style="display:flex;margin-bottom:8px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#FCEAEA;border:1.5px solid white;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#A32D2D;">KS</div>
+        </div>
+        <div class="city-name">Tokyo</div>
+        <div class="city-meta">1 Anchor · Jul – Aug</div>
+        <span class="avail-pill avail-red">Fully booked</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showScreen(id) {
+  document.querySelectorAll('.ol-screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.ol-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  const tabMap = {home:0,map:1,city:2,anchor:3,roamer:4};
+  const tabs = document.querySelectorAll('.ol-tab');
+  if (tabMap[id] !== undefined) tabs[tabMap[id]].classList.add('active');
+  document.querySelectorAll('.radio-card').forEach(c => {
+    c.onclick = function() {
+      this.closest('.radio-group').querySelectorAll('.radio-card').forEach(x => x.classList.remove('selected'));
+      this.classList.add('selected');
+    };
+  });
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    c.onclick = function() { this.classList.toggle('on'); };
+  });
+}
+document.querySelectorAll('.radio-card').forEach(c => {
+  c.onclick = function() {
+    this.closest('.radio-group').querySelectorAll('.radio-card').forEach(x => x.classList.remove('selected'));
+    this.classList.add('selected');
+  };
+});
+document.querySelectorAll('.filter-chip').forEach(c => {
+  c.onclick = function() { this.classList.toggle('on'); };
+});
+</script>

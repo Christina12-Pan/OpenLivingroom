@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/**
+ * Open Livingroom — design tokens (Tailwind v4 @theme)
+ */
+@theme {
+  --color-primary: #b47b2e;
+  --color-available: #2a9d6f;
+  --color-pending: #e8c97a;
+  --color-booked: #d85a30;
+  --color-background: #faf8f4;
+  --color-surface: #f0ede6;
+  --color-near-black: #1a1a18;
+  --color-secondary: #6b6658;
+
+  --font-family-serif: var(--font-playfair), ui-serif, Georgia, serif;
+  --font-family-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-lg: 12px;
+  --radius-md: 10px;
+
+  --default-border-width: 0.5px;
+}
+
+:root {
+  --background: #faf8f4;
+  --foreground: #1a1a18;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-dm-sans), sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-playfair), serif;
+}
+
+.italic-accent {
+  font-style: italic;
+}
